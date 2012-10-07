@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A07F37EB-4BE4-4172-B371-5C555C9DBB4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resty.Net", "src\Resty.Net.csproj", "{A3DF09DF-97C0-4275-B989-792D0AD744D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7A6E282D-59A5-42B5-8827-9B8C2180F63B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resty.Net.Tests", "tests\Resty.Net.Tests\Resty.Net.Tests.csproj", "{9793300B-73A7-477C-9129-9F7B487D9B1B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".ignore", ".ignore", "{0DF59817-D14F-4CD0-8D94-9F9816B0927E}"
+	ProjectSection(SolutionItems) = preProject
+		.ignore\Todo.txt = .ignore\Todo.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{061C6521-25B7-4174-A05C-9DEA5750728B}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3DF09DF-97C0-4275-B989-792D0AD744D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3DF09DF-97C0-4275-B989-792D0AD744D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3DF09DF-97C0-4275-B989-792D0AD744D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3DF09DF-97C0-4275-B989-792D0AD744D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9793300B-73A7-477C-9129-9F7B487D9B1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9793300B-73A7-477C-9129-9F7B487D9B1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9793300B-73A7-477C-9129-9F7B487D9B1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9793300B-73A7-477C-9129-9F7B487D9B1B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A3DF09DF-97C0-4275-B989-792D0AD744D6} = {A07F37EB-4BE4-4172-B371-5C555C9DBB4F}
+		{9793300B-73A7-477C-9129-9F7B487D9B1B} = {7A6E282D-59A5-42B5-8827-9B8C2180F63B}
+	EndGlobalSection
+EndGlobal
