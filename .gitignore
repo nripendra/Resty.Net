@@ -2,7 +2,7 @@
 bin
 obj
 packages
-Todo.txt
+.ignore
 
 # mstest test results
 TestResults
