@@ -3,6 +3,7 @@ bin
 obj
 packages
 .ignore
+Resty.Net.suo
 
 # mstest test results
 TestResults
