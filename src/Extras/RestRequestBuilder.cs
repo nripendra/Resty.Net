@@ -146,6 +146,12 @@ namespace Resty.Net.Extras
             return this;
         }
 
+        public RestRequestBuilder TcpKeepAlive()
+        {
+            _request.TcpKeepAlive = true;
+            return this;
+        }
+
         public RestRequestBuilder WithTcpKeepAliveTimeOut(TimeSpan tcpKeepAliveTimeOut)
         {
             _request.TcpKeepAliveTimeOut = tcpKeepAliveTimeOut;

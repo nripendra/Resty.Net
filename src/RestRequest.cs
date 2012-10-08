@@ -115,8 +115,14 @@ namespace Resty.Net
         public TimeSpan TimeOut { get; set; }
 
         /// <summary>
+        /// Gets or sets TCP keep-alive option. If set to true, then the TCP keep-alive option on a TCP connection will be enabled. Default is false.
+        /// </summary>
+        public bool TcpKeepAlive { get; set; }
+
+        /// <summary>
         /// Gets or sets the timeout period, with no activity until the first keep-alive packet is sent. The value must be greater than 0. 
         /// If a value of less than or equal to zero is passed an System.ArgumentOutOfRangeException is thrown.
+        /// Default value is 2 hours.
         /// </summary>
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
         public TimeSpan TcpKeepAliveTimeOut { get; set; }
@@ -140,7 +146,7 @@ namespace Resty.Net
             ContentType = ContentType.ApplicationX_WWW_Form_UrlEncoded;
             MaximumAutomaticRedirections = 50;
             TimeOut = TimeSpan.FromMinutes(6);
-            TcpKeepAliveTimeOut = TimeSpan.MinValue;
+            TcpKeepAliveTimeOut = TimeSpan.FromHours(2);
             UserAgent = "Resty.Net-RestRequest";
             Method = method;
         }
@@ -418,7 +424,7 @@ namespace Resty.Net
                 webRequest.Timeout = (int)TimeOut.TotalMilliseconds;
             }
 
-            if (TcpKeepAliveTimeOut != TimeSpan.MinValue)
+            if (TcpKeepAlive)
             {
                 webRequest.ServicePoint.SetTcpKeepAlive(true, (int)TcpKeepAliveTimeOut.TotalMilliseconds, 1000);
             }
