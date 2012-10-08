@@ -71,7 +71,7 @@
     <Compile Include="Serialization\RestSerializerRegistry.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="License.txt" />
+    <Content Include="License\License.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resty.Net.nuspec" />
