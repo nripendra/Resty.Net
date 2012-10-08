@@ -23,13 +23,19 @@ using System.Text;
 namespace Resty.Net
 {
     using Extensions;
+    using System.Text.RegularExpressions;
 
     public class RestUri
     {
+        private static Regex patternMultipleSlashes = new Regex("/{2,}", RegexOptions.Compiled);
+
+        private string _resourcePath;
+        private string _resourceQuery;
+
         private Uri _baseUri;
         private Uri _resourceUri;
         private IDictionary<string, string> _uriTemplateParameters;
-        private IDictionary<string, string> _queryString;
+        private IDictionary<string, object> _queryString;
 
         /// <summary>
         /// Instantiate a RestUri.
@@ -72,7 +78,10 @@ namespace Resty.Net
             _baseUri = baseUri;
             _resourceUri = resourceUri;
             _uriTemplateParameters = new Dictionary<string, string>();
-            _queryString = new Dictionary<string, string>();
+            _queryString = new Dictionary<string, object>();
+
+            ParseResourcePathAndQuery();
+            SetQueryEntriesFromUriQueries();
         }
 
         /// <summary>
@@ -86,11 +95,11 @@ namespace Resty.Net
         {
             if (_queryString.ContainsKey(name))
             {
-                _queryString[name] = value.ToString();
+                _queryString[name] = value;
             }
             else
             {
-                _queryString.Add(name, value.ToString());
+                _queryString.Add(name, value);
             }
             return this;
         }
@@ -104,10 +113,17 @@ namespace Resty.Net
         /// <example>restUri.SetQuery(new { id = 1});</example>
         public RestUri SetQuery(object queryParams)
         {
-            var dictionary = queryParams.ToDictionary();
-            foreach (var property in dictionary)
+            if (queryParams.GetType().IsPrimitive)
             {
-                SetQuery(property.Key, property.Value);
+                SetQuery(queryParams.ToString(), QueryStringParameter.None);
+            }
+            else
+            {
+                var dictionary = queryParams.ToDictionary();
+                foreach (var property in dictionary)
+                {
+                    SetQuery(property.Key, property.Value);
+                }
             }
 
             return this;
@@ -152,36 +168,6 @@ namespace Resty.Net
         }
 
         /// <summary>
-        /// Build uri from the base url and the resource uri template. 
-        /// Also processes the uri template parameters and the querystring.
-        /// </summary>
-        /// <returns>Uri</returns>
-        public Uri ToUri()
-        {
-            Uri fullUri;
-            string resourceUri = _resourceUri.OriginalString;
-            foreach (var kv in _uriTemplateParameters)
-            {
-                resourceUri = resourceUri.Replace("{" + kv.Key + "}", kv.Value.ToString());
-            }
-            Uri.TryCreate(_baseUri, resourceUri, out fullUri);
-
-            UriBuilder uriBuilder = new UriBuilder(fullUri);
-
-            string otherQuerStrings = BuildQueryString();
-            if (!string.IsNullOrWhiteSpace(otherQuerStrings))
-            {
-                if (!string.IsNullOrWhiteSpace(uriBuilder.Query))
-                {
-                    uriBuilder.Query += "&";
-                }
-                uriBuilder.Query += otherQuerStrings;
-            }
-
-            return uriBuilder.Uri;
-        }
-
-        /// <summary>
         /// Build Query string from the query string entries added using AddQuerystring method.
         /// </summary>
         /// <returns>string</returns>
@@ -190,14 +176,119 @@ namespace Resty.Net
             List<string> qb = new List<string>();
             foreach (var kv in _queryString)
             {
-                qb.Add(kv.Key + "=" + kv.Value);
+                if (kv.Value is QueryStringParameter)
+                {
+                    qb.Add(Uri.EscapeDataString(kv.Key));
+                }
+                else
+                {
+                    qb.Add(kv.Key + "=" + Uri.EscapeDataString(kv.Value.ToString()));
+                }
             }
             return string.Join("&", qb.ToArray());
         }
 
+        /// <summary>
+        /// Converts the RestUri to it's string Url representation.
+        /// </summary>
+        /// <returns>String Url representation of RestUri.</returns>
         public override string ToString()
         {
-            return ToUri().ToString();
+            UriBuilder uriBuilder = new UriBuilder(GetBaseUriComponents());
+
+            string resourceUri = _resourcePath;
+            foreach (var kv in _uriTemplateParameters)
+            {
+                resourceUri = resourceUri.Replace("{" + kv.Key + "}", Uri.EscapeDataString(kv.Value.ToString()));
+            }
+
+            uriBuilder.Path = resourceUri;
+
+            string finalQuerStrings = BuildQueryString();
+            if (!string.IsNullOrWhiteSpace(finalQuerStrings))
+            {
+                uriBuilder.Query = finalQuerStrings;
+            }
+
+            return Regex.Replace(uriBuilder.ToString(), ":80|:443", "");
         }
+
+        private string GetBaseUriComponents()
+        {
+            UriComponents uriComponents;
+            uriComponents = UriComponents.Scheme | UriComponents.Host;
+
+            if (_baseUri.Port != 80 && _baseUri.Port != 443)
+            {
+                uriComponents |= UriComponents.Port;
+            }
+
+            return _baseUri.GetComponents(uriComponents, UriFormat.Unescaped);
+        }
+
+        private void ParseResourcePathAndQuery()
+        {
+            _resourcePath = _resourceUri.OriginalString;
+            string pathAndQuery = Uri.UnescapeDataString(_baseUri.PathAndQuery);
+
+            if (pathAndQuery != "/")
+            {
+                pathAndQuery = pathAndQuery.TrimEnd('/');
+                    
+                if (string.IsNullOrWhiteSpace(_resourcePath))
+                {
+                    _resourcePath = pathAndQuery;
+                }
+                else
+                {
+                    _resourcePath = _resourcePath.TrimStart('/');
+                        
+                    if (_resourcePath.StartsWith("?"))
+                    {
+                        _resourcePath = pathAndQuery + _resourcePath;
+                    }
+                    else
+                    {
+                        _resourcePath = pathAndQuery + "/" + _resourcePath;                        
+                    }
+                }
+
+                _resourcePath = patternMultipleSlashes.Replace(_resourcePath, "/");
+            }
+            
+            int indexOfQueryString = _resourcePath.IndexOf("?");
+            if (indexOfQueryString > -1)
+            {
+                _resourceQuery = _resourcePath.Substring(indexOfQueryString + 1);
+                _resourcePath = _resourcePath.Substring(0, indexOfQueryString);
+            }
+        }
+
+        private void SetQueryEntriesFromUriQueries()
+        {
+            if (!string.IsNullOrWhiteSpace(_resourceQuery))
+            {
+                string[] nameValuePairs = _resourceQuery.Split('&');
+                foreach (var nameValuePair in nameValuePairs)
+                {
+                    var nameAndValue = nameValuePair.Split('=');
+                    if (nameAndValue.Length > 0)
+                    {
+                        var name = nameAndValue[0];
+                        if (!_queryString.ContainsKey(name))
+                        {
+                            object value = QueryStringParameter.None;
+                            if (nameAndValue.Length > 1)
+                            {
+                                value = nameAndValue[1];
+                            }
+
+                            SetQuery(name, value);
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }

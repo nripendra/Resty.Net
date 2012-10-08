@@ -392,7 +392,7 @@ namespace Resty.Net
         /// <returns>HttpWebRequest</returns>
         protected virtual HttpWebRequest CreateHttpWebRequest()
         {
-            var webRequest = (HttpWebRequest)System.Net.WebRequest.Create(RestUri.ToUri());
+            var webRequest = (HttpWebRequest)System.Net.WebRequest.Create(RestUri.ToString());
 
             webRequest.AllowAutoRedirect = AllowAutoRedirect;
             webRequest.AuthenticationLevel = AuthenticationLevel;
