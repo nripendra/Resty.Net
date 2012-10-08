@@ -118,8 +118,7 @@ namespace Resty.Net
         {
             if (_contentBytes == null)
             {
-                MemoryStream destinationStream = new MemoryStream();
-                return CopyToAsync(destinationStream).ContinueWith(t =>
+                return ReadAsStreamAsync().ContinueWith(t =>
                 {
                     if (t.IsFaulted)
                     {
