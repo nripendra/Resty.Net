@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Nancy;
-using Nancy.ModelBinding;
 using Nancy.Diagnostics;
-using System.IO;
+using Nancy.ModelBinding;
 
 namespace Resty.Net.Tests
 {
     public class StubModule : NancyModule
     {
+        public static TimeSpan HaltProcessing;
         public static List<Person> TestHarness;
         public static bool GetPerson = false;
         public static bool PostPerson = false;
@@ -22,6 +24,11 @@ namespace Resty.Net.Tests
             Get["/Person/{id}"] = p =>
             {
                 GetPerson = true;
+                if (HaltProcessing != null)
+                {
+                    Thread.Sleep(HaltProcessing);
+                }
+
                 var person = TestHarness.Where(x => x.Id == p.id).FirstOrDefault();
                 if (person != null)
                 {

@@ -14,63 +14,25 @@ namespace Resty.Net.Tests
         //Idea for REST client testing shamelessly copied from
         //http://www.csharpfritz.com/post/26765731081/restful-client-unit-testing-with-nancyfx.
 
-        private NancyHost _Nancy;
-        private static int port = 50001;
-        protected Uri _MyUri = new Uri("http://localhost:50001");
+        Uri _MyUri;
+        NancyHostHelper _nancyHostHelper;
 
         public RestRequestTest()
         {
-            bool nancyStarted = false;
-            // Need to retry in order to ensure that we properly startup after any failures
-            for (var i = 0; i < 3; i++)
-            {
-                _Nancy = new NancyHost(_MyUri);
-
-                try
-                {
-                    _Nancy.Start();
-                    nancyStarted = true;
-                    break;
-                }
-                catch (HttpListenerException)
-                {
-                    UriBuilder ub = new UriBuilder(_MyUri);
-                    ub.Port = ++port;
-                    _MyUri = ub.Uri;
-                }
-                catch
-                {
-                    try
-                    {
-                        _Nancy.Stop();
-                    }
-                    catch (Exception e)
-                    {
-                    }
-                }
-            }
-
-            if (!nancyStarted)
-            {
-                //Don't allow to run the tests if Nancy not started.
-                throw new Exception();
-            }
+            _nancyHostHelper = new NancyHostHelper();
+            _MyUri = _nancyHostHelper.Start();
         }
 
         ~RestRequestTest()
         {
-            try
-            {
-                _Nancy.Stop();
-                _Nancy = null;
-            }
-            catch { }
+            _nancyHostHelper.Stop();
         }
 
         [Fact]
         public void Get()
         {
             //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.GetPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -95,6 +57,7 @@ namespace Resty.Net.Tests
         public void GetAborted()
         {
             //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.GetPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -111,9 +74,76 @@ namespace Resty.Net.Tests
         }
 
         [Fact]
+        public void GetWithTimeout()
+        {
+            //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(10);
+            StubModule.GetPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.GET, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
+            target.TimeOut = TimeSpan.FromSeconds(2);
+
+            //Act
+            using (RestResponse<Person> actual = target.GetResponse<Person>())
+            {
+                //Assert
+                Assert.True(StubModule.GetPerson);
+                Assert.NotNull(actual);
+                Assert.NotNull(actual.Error);
+                Assert.Equal("request canceled", actual.Error.Message.ToLower());
+            }
+        }
+
+        [Fact]
+        public void GetWithoutServer()
+        {
+            //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(10);
+            StubModule.GetPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.GET, new RestUri(new Uri("http://localhost:60001/api"), "/Person/{id}").SetParameter("id", "1"));
+
+            //Act
+            using (RestResponse<Person> actual = target.GetResponse<Person>())
+            {
+                //Assert
+                Assert.NotNull(actual);
+                Assert.NotNull(actual.Error);
+                Assert.NotNull(actual.Error.InnerException);
+                Assert.NotNull(actual.Error.InnerException.InnerException);
+                Assert.Equal("unable to connect to the remote server", actual.Error.InnerException.InnerException.Message.ToLower());
+            }
+        }
+
+        [Fact]
+        public void GetWithoutResolvableDomainName()
+        {
+            //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(10);
+            StubModule.GetPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.GET, new RestUri(new Uri("http://localhost.nripendraiscool:60001/api"), "/Person/{id}").SetParameter("id", "1"));
+
+            //Act
+            using (RestResponse<Person> actual = target.GetResponse<Person>())
+            {
+                //Assert
+                Assert.NotNull(actual);
+                Assert.NotNull(actual.Error);
+                Assert.NotNull(actual.Error.InnerException);
+                Assert.NotNull(actual.Error.InnerException.InnerException);
+                Assert.Equal("the remote name could not be resolved: 'localhost.nripendraiscool'", actual.Error.InnerException.InnerException.Message.ToLower());
+            }
+        }
+
+        [Fact]
         public void GetWeaklyTypedResponse()
         {
             //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.GetPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -134,13 +164,14 @@ namespace Resty.Net.Tests
         [Fact]
         public void PostWithNormalContentType()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PostPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
             RestRequest target = new RestRequest(HttpMethod.POST, new RestUri(_MyUri, "/Person"));
             target.ContentType = ContentType.ApplicationX_WWW_Form_UrlEncoded;
             target.Body = new RestObjectRequestBody<Person>(new Person { Id = 2, Email = "xyz@abc.com" });
-            
+
             using (RestResponse actual = target.GetResponse())
             {
                 Assert.True(StubModule.PostPerson);
@@ -155,13 +186,14 @@ namespace Resty.Net.Tests
         [Fact]
         public void PostWithJsonContentType()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PostPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
             RestRequest target = new RestRequest(HttpMethod.POST, new RestUri(_MyUri, "/Person"));
             target.ContentType = ContentType.ApplicationJson;
             target.Body = new RestObjectRequestBody<Person>(new Person { Id = 3, Email = "xyz123@abc.com" });
-            
+
             using (RestResponse actual = target.GetResponse())
             {
                 Assert.True(StubModule.PostPerson);
@@ -176,14 +208,15 @@ namespace Resty.Net.Tests
         [Fact]
         public void PutWithNormalContentType()
         {
-            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PutPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
             RestRequest target = new RestRequest(HttpMethod.PUT, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
             target.ContentType = ContentType.ApplicationX_WWW_Form_UrlEncoded;
             target.Body = new RestObjectRequestBody<Person>(new Person { Id = 1, Email = "bcd@abc.com" });
 
-            
+
             using (RestResponse actual = target.GetResponse())
             {
                 Assert.True(StubModule.PutPerson);
@@ -199,6 +232,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void PutWithJsonContentType()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PutPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -206,7 +240,7 @@ namespace Resty.Net.Tests
             target.ContentType = ContentType.ApplicationJson;
             target.Body = new RestObjectRequestBody<Person>(new Person { Id = 1, Email = "bcd@abc.com" });
 
-            
+
             using (RestResponse actual = target.GetResponse())
             {
                 Assert.True(StubModule.PutPerson);
@@ -222,6 +256,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void Delete()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.DeletePerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 

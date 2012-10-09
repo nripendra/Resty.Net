@@ -34,11 +34,14 @@ namespace Resty.Net
         {
             get
             {
-                string content = Body.ReadAsString();
-                if (!string.IsNullOrWhiteSpace(content))
+                if (Body != null)
                 {
-                    var deserializer = RestConfiguration.DeSerializers.GetDeSerializer(ContentType);
-                    return deserializer.DeSerialize<T>(content);
+                    string content = Body.ReadAsString();
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        var deserializer = RestConfiguration.DeSerializers.GetDeSerializer(ContentType);
+                        return deserializer.DeSerialize<T>(content);
+                    }
                 }
 
                 return default(T);
