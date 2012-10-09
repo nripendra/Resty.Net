@@ -71,6 +71,7 @@ namespace Resty.Net.Tests
         public void Get()
         {
             //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.GetPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -95,6 +96,7 @@ namespace Resty.Net.Tests
         public void GetAborted()
         {
             //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.GetPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -111,9 +113,32 @@ namespace Resty.Net.Tests
         }
 
         [Fact]
+        public void GetWithTimeout()
+        {
+            //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(10);
+            StubModule.GetPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.GET, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
+            target.TimeOut = TimeSpan.FromSeconds(2);
+
+            //Act
+            using (RestResponse<Person> actual = target.GetResponse<Person>())
+            {
+                //Assert
+                Assert.True(StubModule.GetPerson);
+                Assert.NotNull(actual);
+                Assert.NotNull(actual.Error);
+                Assert.Equal("request canceled", actual.Error.Message.ToLower());
+            }
+        }
+
+        [Fact]
         public void GetWeaklyTypedResponse()
         {
             //Arrange
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.GetPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -134,6 +159,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void PostWithNormalContentType()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PostPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -155,6 +181,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void PostWithJsonContentType()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PostPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -176,9 +203,10 @@ namespace Resty.Net.Tests
         [Fact]
         public void PutWithNormalContentType()
         {
-            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PutPerson = false;
-
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+            
             RestRequest target = new RestRequest(HttpMethod.PUT, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
             target.ContentType = ContentType.ApplicationX_WWW_Form_UrlEncoded;
             target.Body = new RestObjectRequestBody<Person>(new Person { Id = 1, Email = "bcd@abc.com" });
@@ -199,6 +227,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void PutWithJsonContentType()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.PutPerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
@@ -222,6 +251,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void Delete()
         {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
             StubModule.DeletePerson = false;
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 

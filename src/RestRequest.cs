@@ -22,6 +22,7 @@ using System.Net;
 using System.Net.Cache;
 using System.Net.Security;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Resty.Net
@@ -316,16 +317,17 @@ namespace Resty.Net
             CancellationTokenSource = new System.Threading.CancellationTokenSource();
             CancellationToken = CancellationTokenSource.Token;
 
-            Task<WebResponse> t = Task.Factory.FromAsync(HttpWebRequest.BeginGetResponse, asyncResult => { try { return HttpWebRequest.EndGetResponse(asyncResult); } catch { return null; } }, (object)HttpWebRequest);
+            Task<WebResponse> result = Task.Factory.FromAsync(HttpWebRequest.BeginGetResponse, asyncResult => { try { return HttpWebRequest.EndGetResponse(asyncResult); } catch { return null; } }, (object)HttpWebRequest);
+            ThreadPool.RegisterWaitForSingleObject((result as IAsyncResult).AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), HttpWebRequest, TimeOut, true);
 
-            return t.ContinueWith((task) =>
+            return result.ContinueWith((task) =>
             {
                 HttpWebResponse webResponse = null;
                 RestException responseError = null;
 
                 if (task.IsFaulted)
                 {
-                    responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, t.Exception.Flatten());
+                    responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, task.Exception.Flatten());
                 }
                 else if (task.IsCanceled)
                 {
@@ -506,6 +508,24 @@ namespace Resty.Net
         /// <param name="request"></param>
         protected virtual void OnWebResponseReceived(WebResponse response)
         {
+        }
+
+        // Abort the request if the timer fires. 
+        private void TimeoutCallback(object state, bool timedOut)
+        {
+            if (timedOut)
+            {
+                if (CancellationTokenSource != null)
+                {
+                    CancellationTokenSource.Cancel();
+                }
+
+                HttpWebRequest request = state as HttpWebRequest;
+                if (request != null)
+                {
+                    request.Abort();
+                }
+            }
         }
     }
 }
