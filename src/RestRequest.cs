@@ -317,7 +317,7 @@ namespace Resty.Net
             CancellationTokenSource = new System.Threading.CancellationTokenSource();
             CancellationToken = CancellationTokenSource.Token;
 
-            Task<WebResponse> result = Task.Factory.FromAsync(HttpWebRequest.BeginGetResponse, asyncResult => { try { return HttpWebRequest.EndGetResponse(asyncResult); } catch { return null; } }, (object)HttpWebRequest);
+            Task<WebResponse> result = Task.Factory.FromAsync(HttpWebRequest.BeginGetResponse, asyncResult => HttpWebRequest.EndGetResponse(asyncResult), (object)HttpWebRequest);
             ThreadPool.RegisterWaitForSingleObject((result as IAsyncResult).AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), HttpWebRequest, TimeOut, true);
 
             return result.ContinueWith((task) =>
