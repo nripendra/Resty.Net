@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Net;
+using System.Text;
 using Nancy.Hosting.Self;
 
 namespace Resty.Net.Tests
@@ -50,7 +50,7 @@ namespace Resty.Net.Tests
                 //Don't allow to run the tests if Nancy not started.
                 throw new Exception();
             }
-
+            
             return _uri;
         }
 

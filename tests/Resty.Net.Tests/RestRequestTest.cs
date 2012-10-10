@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using Nancy.Hosting.Self;
 using Xunit;
 using Xunit.Extensions;
-using Nancy.Hosting.Self;
-using System.Net;
 
 namespace Resty.Net.Tests
 {
@@ -237,6 +237,54 @@ namespace Resty.Net.Tests
             StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
 
             RestRequest target = new RestRequest(HttpMethod.PUT, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
+            target.ContentType = ContentType.ApplicationJson;
+            target.Body = new RestObjectRequestBody<Person>(new Person { Id = 1, Email = "bcd@abc.com" });
+
+
+            using (RestResponse actual = target.GetResponse())
+            {
+                Assert.True(StubModule.PutPerson);
+                Assert.NotNull(actual);
+                Assert.True(actual.IsSuccessStatusCode);
+
+                var person = StubModule.TestHarness.Where(x => x.Id == 1).FirstOrDefault();
+                Assert.NotNull(person);
+                Assert.Equal("bcd@abc.com", person.Email);
+            }
+        }
+
+        [Fact]
+        public void PatchWithNormalContentType()
+        {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
+            StubModule.PatchPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.PATCH, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
+            target.ContentType = ContentType.ApplicationX_WWW_Form_UrlEncoded;
+            target.Body = new RestObjectRequestBody<Person>(new Person { Id = 1, Email = "bcd@abc.com" });
+
+
+            using (RestResponse actual = target.GetResponse())
+            {
+                Assert.True(StubModule.PutPerson);
+                Assert.NotNull(actual);
+                Assert.True(actual.IsSuccessStatusCode);
+
+                var person = StubModule.TestHarness.Where(x => x.Id == 1).FirstOrDefault();
+                Assert.NotNull(person);
+                Assert.Equal("bcd@abc.com", person.Email);
+            }
+        }
+
+        [Fact]
+        public void PatchWithJsonContentType()
+        {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
+            StubModule.PatchPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.PATCH, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
             target.ContentType = ContentType.ApplicationJson;
             target.Body = new RestObjectRequestBody<Person>(new Person { Id = 1, Email = "bcd@abc.com" });
 

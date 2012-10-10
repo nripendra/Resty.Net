@@ -22,8 +22,8 @@ using System.Text;
 
 namespace Resty.Net
 {
-    using Extensions;
     using System.Text.RegularExpressions;
+    using Extensions;
 
     public class RestUri
     {
@@ -32,10 +32,14 @@ namespace Resty.Net
         private string _resourcePath;
         private string _resourceQuery;
 
-        private Uri _baseUri;
         private Uri _resourceUri;
         private IDictionary<string, string> _uriTemplateParameters;
         private IDictionary<string, object> _queryString;
+
+        /// <summary>
+        /// The BaseUri pointing to the rest service.
+        /// </summary>
+        public Uri BaseUri { get; protected set; }
 
         /// <summary>
         /// Instantiate a RestUri.
@@ -75,7 +79,7 @@ namespace Resty.Net
         /// <exception cref="System.UriFormatException"></exception>
         public RestUri(Uri baseUri, Uri resourceUri)
         {
-            _baseUri = baseUri;
+            BaseUri = baseUri;
             _resourceUri = resourceUri;
             _uriTemplateParameters = new Dictionary<string, string>();
             _queryString = new Dictionary<string, object>();
@@ -218,23 +222,23 @@ namespace Resty.Net
             UriComponents uriComponents;
             uriComponents = UriComponents.Scheme | UriComponents.Host;
 
-            if (_baseUri.Port != 80 && _baseUri.Port != 443)
+            if (BaseUri.Port != 80 && BaseUri.Port != 443)
             {
                 uriComponents |= UriComponents.Port;
             }
 
-            return _baseUri.GetComponents(uriComponents, UriFormat.Unescaped);
+            return BaseUri.GetComponents(uriComponents, UriFormat.Unescaped);
         }
 
         private void ParseResourcePathAndQuery()
         {
             _resourcePath = _resourceUri.OriginalString;
-            string pathAndQuery = Uri.UnescapeDataString(_baseUri.PathAndQuery);
+            string pathAndQuery = Uri.UnescapeDataString(BaseUri.PathAndQuery);
 
             if (pathAndQuery != "/")
             {
                 pathAndQuery = pathAndQuery.TrimEnd('/');
-                    
+
                 if (string.IsNullOrWhiteSpace(_resourcePath))
                 {
                     _resourcePath = pathAndQuery;
@@ -242,20 +246,20 @@ namespace Resty.Net
                 else
                 {
                     _resourcePath = _resourcePath.TrimStart('/');
-                        
+
                     if (_resourcePath.StartsWith("?"))
                     {
                         _resourcePath = pathAndQuery + _resourcePath;
                     }
                     else
                     {
-                        _resourcePath = pathAndQuery + "/" + _resourcePath;                        
+                        _resourcePath = pathAndQuery + "/" + _resourcePath;
                     }
                 }
 
                 _resourcePath = patternMultipleSlashes.Replace(_resourcePath, "/");
             }
-            
+
             int indexOfQueryString = _resourcePath.IndexOf("?");
             if (indexOfQueryString > -1)
             {

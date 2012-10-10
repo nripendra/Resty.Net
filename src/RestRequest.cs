@@ -225,6 +225,10 @@ namespace Resty.Net
             {
                 if (cookie != null)
                 {
+                    if (string.IsNullOrWhiteSpace(cookie.Domain))
+                    {
+                        cookie.Domain = RestUri.BaseUri.Host;
+                    }
                     this.CookieContainer.Add(cookie);
                 }
             }

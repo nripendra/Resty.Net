@@ -23,19 +23,45 @@ using System.Threading.Tasks;
 
 namespace Resty.Net.Extras
 {
+    using System.Net;
     using Extensions;
 
     public class RestInvoker
     {
         private Uri _baseUrl;
+        private CookieCollection _cookies;
+        private IDictionary<object, object> _headers;
 
         public RestInvoker()
         {
+            _cookies = new CookieCollection() ;
+            _headers = new Dictionary<object, object>();
         }
 
         public RestInvoker(string baseUrl)
+            : this()
         {
             _baseUrl = new Uri(baseUrl, UriKind.Absolute);
+        }
+
+        public void AddCookie(string name, string value)
+        {
+            _cookies.Add(new Cookie(name, value));
+        }
+
+        public void AddCookie(Cookie cookie)
+        {
+            _cookies.Add(cookie);
+        }
+
+        public void AddHeader(string name, string value)
+        {
+            _headers.Add(name, value);
+        }
+
+        public void AddHeader(HttpRequestHeader name, string value)
+        {
+            _headers.Add(name, value);
         }
 
         public Task<RestResponse> InvokeAsync(RestRequest request)
@@ -88,7 +114,7 @@ namespace Resty.Net.Extras
             return GetAsync(uri).Result;
         }
 
-        public Task<RestResponse> PostAsync(RestUri uri, RestRequestBody requestBody, ContentType contentType)
+        public Task<RestResponse> PostAsync(RestUri uri, RestRequestBody requestBody, ContentType contentType)//1
         {
             RestRequest request = CreateRestRequest(HttpMethod.POST, uri);
             request.ContentType = contentType;
@@ -96,24 +122,24 @@ namespace Resty.Net.Extras
             return InvokeAsync(request);
         }
 
-        public Task<RestResponse> PostAsync(RestUri uri, RestRequestBody requestBody)
+        public Task<RestResponse> PostAsync(RestUri uri, RestRequestBody requestBody)//2
         {
             return PostAsync(uri, requestBody, ContentType.ApplicationX_WWW_Form_UrlEncoded);
         }
 
-        public Task<RestResponse> PostAsync(string resourceUri, object parameters, RestRequestBody body, ContentType contentType)
+        public Task<RestResponse> PostAsync(string resourceUri, object parameters, RestRequestBody body, ContentType contentType)//3
         {
             return PostAsync(CreateRestUri(_baseUrl, resourceUri, parameters), body, contentType);
         }
 
-        public Task<RestResponse> PostAsync(string resourceUri, RestRequestBody body)
-        {
-            return PostAsync(CreateRestUri(_baseUrl, resourceUri, new { }), body, ContentType.ApplicationX_WWW_Form_UrlEncoded);
-        }
-
-        public Task<RestResponse> PostAsync(string resourceUri, object parameters, RestRequestBody body)
+        public Task<RestResponse> PostAsync(string resourceUri, object parameters, RestRequestBody body)//4
         {
             return PostAsync(CreateRestUri(_baseUrl, resourceUri, parameters), body, ContentType.ApplicationX_WWW_Form_UrlEncoded);
+        }
+
+        public Task<RestResponse> PostAsync(string resourceUri, RestRequestBody body)//5
+        {
+            return PostAsync(CreateRestUri(_baseUrl, resourceUri, new { }), body, ContentType.ApplicationX_WWW_Form_UrlEncoded);
         }
 
         public RestResponse Post(RestUri uri, RestRequestBody requestBody, ContentType contentType)
@@ -141,7 +167,7 @@ namespace Resty.Net.Extras
             return PostAsync(resourceUri, parameters, body).Result;
         }
 
-        public Task<RestResponse> PutAsync(RestUri uri, RestRequestBody requestBody, ContentType contentType)
+        public Task<RestResponse> PutAsync(RestUri uri, RestRequestBody requestBody, ContentType contentType)//1
         {
             RestRequest request = CreateRestRequest(HttpMethod.PUT, uri);
             request.Body = requestBody;
@@ -149,24 +175,24 @@ namespace Resty.Net.Extras
             return InvokeAsync(request);
         }
 
-        public Task<RestResponse> PutAsync(RestUri uri, RestRequestBody requestBody)
+        public Task<RestResponse> PutAsync(RestUri uri, RestRequestBody requestBody)//2
         {
             return PutAsync(uri, requestBody, ContentType.ApplicationX_WWW_Form_UrlEncoded);
         }
 
-        public Task<RestResponse> PutAsync(string resourceUri, object parameters, RestRequestBody body, ContentType contentType)
+        public Task<RestResponse> PutAsync(string resourceUri, object parameters, RestRequestBody body, ContentType contentType)//3
         {
             return PutAsync(CreateRestUri(_baseUrl, resourceUri, parameters), body, contentType);
         }
 
-        public Task<RestResponse> PutAsync(string resourceUri, RestRequestBody body)
-        {
-            return PutAsync(CreateRestUri(_baseUrl, resourceUri, new { }), body, ContentType.ApplicationX_WWW_Form_UrlEncoded);
-        }
-
-        public Task<RestResponse> PutAsync(string resourceUri, object parameters, RestRequestBody body)
+        public Task<RestResponse> PutAsync(string resourceUri, object parameters, RestRequestBody body)//4
         {
             return PutAsync(CreateRestUri(_baseUrl, resourceUri, parameters), body, ContentType.ApplicationX_WWW_Form_UrlEncoded);
+        }
+
+        public Task<RestResponse> PutAsync(string resourceUri, RestRequestBody body)//5
+        {
+            return PutAsync(CreateRestUri(_baseUrl, resourceUri, new { }), body, ContentType.ApplicationX_WWW_Form_UrlEncoded);
         }
 
         public RestResponse Put(RestUri uri, RestRequestBody requestBody, ContentType contentType)
@@ -498,7 +524,26 @@ namespace Resty.Net.Extras
 
         private RestRequest CreateRestRequest(HttpMethod method, RestUri uri)
         {
-            return new RestRequest(method, uri);
+            var restRequest = new RestRequest(method, uri);
+            
+            foreach (Cookie cookie in _cookies)
+            {
+                restRequest.AddCookie(cookie);
+            }
+
+            foreach (var header in _headers)
+            {
+                if (header.Key is string)
+                {
+                    restRequest.AddHeader(header.Key.ToString(), header.Value.ToString());
+                }
+                else if (header.Key is HttpRequestHeader)
+                {
+                    restRequest.AddHeader((HttpRequestHeader)header.Key, header.Value.ToString());
+                }
+            }
+
+            return restRequest;
         }
 
         private RestUri CreateRestUri(Uri baseUri, string resourceUri, object parameters)
@@ -511,11 +556,11 @@ namespace Resty.Net.Extras
             {
                 if (resourceUri.IndexOf("{" + nameValue.Key + "}") > -1)
                 {
-                    uri.SetParameter(nameValue.Value);
+                    uri.SetParameter(nameValue.Key, nameValue.Value);
                 }
                 else
                 {
-                    uri.SetQuery(nameValue.Value);
+                    uri.SetQuery(nameValue.Key, nameValue.Value);
                 }
             }
 

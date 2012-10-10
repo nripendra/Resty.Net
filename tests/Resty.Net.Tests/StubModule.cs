@@ -14,9 +14,12 @@ namespace Resty.Net.Tests
     {
         public static TimeSpan HaltProcessing;
         public static List<Person> TestHarness;
+        public static IDictionary<string, string> Cookie;
+        public static RequestHeaders RequestHeaders;
         public static bool GetPerson = false;
         public static bool PostPerson = false;
         public static bool PutPerson = false;
+        public static bool PatchPerson = false;
         public static bool DeletePerson = false;
 
         public StubModule()
@@ -24,6 +27,8 @@ namespace Resty.Net.Tests
             Get["/Person/{id}"] = p =>
             {
                 GetPerson = true;
+                Cookie = Request.Cookies;
+                RequestHeaders = Request.Headers;
                 if (HaltProcessing != null)
                 {
                     Thread.Sleep(HaltProcessing);
@@ -40,6 +45,8 @@ namespace Resty.Net.Tests
             Post["/Person"] = _ =>
             {
                 PostPerson = true;
+                Cookie = Request.Cookies;
+                RequestHeaders = Request.Headers;
                 Person person = this.Bind<Person>();
                 TestHarness.Add(person);
                 return 200;
@@ -48,6 +55,19 @@ namespace Resty.Net.Tests
             Put["/Person/{id}"] = (p) =>
             {
                 PutPerson = true;
+                Cookie = Request.Cookies;
+                RequestHeaders = Request.Headers;
+                Person updatedPerson = this.Bind<Person>();
+                var existingPerson = TestHarness.Where(x => x.Id == p.id).FirstOrDefault();
+                existingPerson.Email = updatedPerson.Email;
+                return 200;
+            };
+
+            Patch["/Person/{id}"] = (p) =>
+            {
+                PatchPerson = true;
+                Cookie = Request.Cookies;
+                RequestHeaders = Request.Headers;
                 Person updatedPerson = this.Bind<Person>();
                 var existingPerson = TestHarness.Where(x => x.Id == p.id).FirstOrDefault();
                 existingPerson.Email = updatedPerson.Email;
@@ -57,6 +77,8 @@ namespace Resty.Net.Tests
             Delete["/Person/{id}"] = (p) =>
             {
                 DeletePerson = true;
+                Cookie = Request.Cookies;
+                RequestHeaders = Request.Headers;
                 var existingPerson = TestHarness.Where(x => x.Id == p.id).FirstOrDefault();
                 TestHarness.Remove(existingPerson);
                 return 200;
