@@ -18,13 +18,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Security;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Resty.Net.Extras
 {
-    using System.Net;
     using Extensions;
+    using System.Net.Cache;
 
     public class RestInvoker
     {
@@ -32,10 +34,86 @@ namespace Resty.Net.Extras
         private CookieCollection _cookies;
         private IDictionary<object, object> _headers;
 
+        /// <summary>
+        /// Gets or sets a value that indicates whether the request should follow redirection responses.
+        /// </summary>
+        public bool AllowAutoRedirect { get; set; }
+
+        /// <summary>
+        ///  Gets or sets values indicating the level of authentication and impersonation used for this request.
+        /// </summary>
+        public AuthenticationLevel AuthenticationLevel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type of decompression that is used.
+        /// </summary>
+        public DecompressionMethods AutomaticDecompression { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cache policy for this request.
+        /// </summary>
+        public System.Net.Cache.RequestCachePolicy CachePolicy { get; set; }
+
+        /// <summary>
+        /// Gets or sets the collection of security certificates that are associated with this request.
+        /// </summary>
+        public System.Security.Cryptography.X509Certificates.X509CertificateCollection ClientCertificates { get; set; }
+
+        /// <summary>
+        ///  Gets or sets authentication information for the request.
+        /// </summary>
+        public ICredentials Credentials { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value that indicates whether to make a persistent connection to the Internet resource.
+        /// </summary>
+        public bool KeepAlive { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of redirects that the request follows.
+        /// </summary>
+        public int MaximumAutomaticRedirections { get; set; }
+
+        /// <summary>
+        /// Gets or sets the value of the Referer HTTP header.
+        /// </summary>
+        public string Referer { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time-out value in milliseconds for the GetResponse() method.
+        /// </summary>
+        public TimeSpan TimeOut { get; set; }
+
+        /// <summary>
+        /// Gets or sets TCP keep-alive option. If set to true, then the TCP keep-alive option on a TCP connection will be enabled. Default is false.
+        /// </summary>
+        public bool TcpKeepAlive { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout period, with no activity until the first keep-alive packet is sent. The value must be greater than 0. 
+        /// If a value of less than or equal to zero is passed an System.ArgumentOutOfRangeException is thrown.
+        /// Default value is 2 hours.
+        /// </summary>
+        /// <exception cref="System.ArgumentOutOfRangeException"></exception>
+        public TimeSpan TcpKeepAliveTimeOut { get; set; }
+
+        /// <summary>
+        /// Gets or sets the value of the User-agent HTTP header.
+        /// </summary>
+        public string UserAgent { get; set; }
+
         public RestInvoker()
         {
-            _cookies = new CookieCollection() ;
+            _cookies = new CookieCollection();
             _headers = new Dictionary<object, object>();
+            AllowAutoRedirect = true;
+            AuthenticationLevel = System.Net.Security.AuthenticationLevel.MutualAuthRequested;
+            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+            CachePolicy = new HttpRequestCachePolicy(HttpRequestCacheLevel.NoCacheNoStore);
+            MaximumAutomaticRedirections = 50;
+            TimeOut = TimeSpan.FromMinutes(6);
+            TcpKeepAliveTimeOut = TimeSpan.FromHours(2);
+            UserAgent = "Resty.Net-RestRequest";
         }
 
         public RestInvoker(string baseUrl)
@@ -525,7 +603,7 @@ namespace Resty.Net.Extras
         private RestRequest CreateRestRequest(HttpMethod method, RestUri uri)
         {
             var restRequest = new RestRequest(method, uri);
-            
+
             foreach (Cookie cookie in _cookies)
             {
                 restRequest.AddCookie(cookie);
@@ -542,6 +620,26 @@ namespace Resty.Net.Extras
                     restRequest.AddHeader((HttpRequestHeader)header.Key, header.Value.ToString());
                 }
             }
+
+            restRequest.AllowAutoRedirect = AllowAutoRedirect;
+            restRequest.AuthenticationLevel = AuthenticationLevel;
+            restRequest.AutomaticDecompression = AutomaticDecompression;
+            restRequest.CachePolicy = CachePolicy;
+            if (ClientCertificates != null)
+            {
+                foreach (var cert in ClientCertificates)
+                {
+                    restRequest.ClientCertificates.Add(cert);
+                }
+            }
+            restRequest.Credentials = Credentials;
+            restRequest.KeepAlive = KeepAlive;
+            restRequest.MaximumAutomaticRedirections = MaximumAutomaticRedirections;
+            restRequest.Referer = Referer;
+            restRequest.TcpKeepAlive = TcpKeepAlive;
+            restRequest.TcpKeepAliveTimeOut = TcpKeepAliveTimeOut;
+            restRequest.TimeOut = TimeOut;
+            restRequest.UserAgent = UserAgent;
 
             return restRequest;
         }
