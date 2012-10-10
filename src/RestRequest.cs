@@ -331,7 +331,15 @@ namespace Resty.Net
 
                 if (task.IsFaulted)
                 {
-                    responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, task.Exception.Flatten());
+                    var flattenedException = task.Exception.Flatten();
+                    var innerException = (Exception)null;
+                    
+                    if (flattenedException.InnerExceptions.Count == 1)
+                    {
+                        innerException = flattenedException.InnerException;
+                    }
+
+                    responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, innerException ?? flattenedException);
                 }
                 else if (task.IsCanceled)
                 {

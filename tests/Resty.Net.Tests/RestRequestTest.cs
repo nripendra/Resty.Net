@@ -112,8 +112,7 @@ namespace Resty.Net.Tests
                 Assert.NotNull(actual);
                 Assert.NotNull(actual.Error);
                 Assert.NotNull(actual.Error.InnerException);
-                Assert.NotNull(actual.Error.InnerException.InnerException);
-                Assert.Equal("unable to connect to the remote server", actual.Error.InnerException.InnerException.Message.ToLower());
+                Assert.Equal("unable to connect to the remote server", actual.Error.InnerException.Message.ToLower());
             }
         }
 
@@ -134,8 +133,7 @@ namespace Resty.Net.Tests
                 Assert.NotNull(actual);
                 Assert.NotNull(actual.Error);
                 Assert.NotNull(actual.Error.InnerException);
-                Assert.NotNull(actual.Error.InnerException.InnerException);
-                Assert.Equal("the remote name could not be resolved: 'localhost.nripendraiscool'", actual.Error.InnerException.InnerException.Message.ToLower());
+                Assert.Equal("the remote name could not be resolved: 'localhost.nripendraiscool'", actual.Error.InnerException.Message.ToLower());
             }
         }
 
