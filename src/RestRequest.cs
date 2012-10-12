@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Cache;
 using System.Net.Security;
@@ -31,9 +32,8 @@ namespace Resty.Net
 
     public class RestRequest
     {
-        protected HttpWebRequest HttpWebRequest { get; set; }
-        protected System.Threading.CancellationTokenSource CancellationTokenSource { get; set; }
-        protected System.Threading.CancellationToken CancellationToken { get; set; }
+        private bool _isAsyncTimeout = false;
+        private System.Threading.CancellationTokenSource _cancellationTokenSource { get; set; }
 
         /// <summary>
         /// Gets or sets the RestUri of the Request. RestUri with resource Uri combines to become the full Uri pointing to the resource.
@@ -160,14 +160,14 @@ namespace Resty.Net
         /// </summary>
         public virtual void Abort()
         {
-            if (HttpWebRequest != null)
+            if (syncWebRequest != null)
             {
-                HttpWebRequest.Abort();
+                syncWebRequest.Abort();
             }
 
-            if (CancellationTokenSource != null)
+            if (_cancellationTokenSource != null)
             {
-                CancellationTokenSource.Cancel();
+                _cancellationTokenSource.Cancel();
             }
         }
 
@@ -253,7 +253,7 @@ namespace Resty.Net
         /// <returns>RestResponse<T></returns>
         public virtual RestResponse<T> GetResponse<T>()
         {
-            RestResponse<T> restResponse = GetResponseAsync<T>().Result;
+            RestResponse<T> restResponse = (RestResponse<T>)GetResponseInternal(typeof(T));
             return restResponse;
         }
 
@@ -265,7 +265,7 @@ namespace Resty.Net
         /// <returns>RestResponse</returns>
         public virtual RestResponse GetResponse()
         {
-            RestResponse restResponse = GetResponseAsync().Result;
+            RestResponse restResponse = GetResponseInternal(null);
             return restResponse;
         }
 
@@ -277,14 +277,7 @@ namespace Resty.Net
         /// <returns>Task<RestResponse></returns>
         public virtual Task<RestResponse> GetResponseAsync()
         {
-            return GetResponseInternalAsync(null).ContinueWith(t =>
-            {
-                if (t.IsCanceled)
-                {
-                    return new RestResponse(this, null, new RestException(0, "Request canceled", null));
-                }
-                return t.Result;
-            });
+            return GetResponseInternalAsync(null);
         }
 
         /// <summary>
@@ -296,62 +289,89 @@ namespace Resty.Net
         /// <returns>Task<RestResponse<T>></returns>
         public virtual Task<RestResponse<T>> GetResponseAsync<T>()
         {
-            return GetResponseInternalAsync(typeof(T)).ContinueWith(t =>
-            {
-                if (t.IsCanceled)
-                {
-                    return new RestResponse<T>(this, null, new RestException(0, "Request canceled", null));
-                }
-                return (RestResponse<T>)t.Result;
-            });
+            return GetResponseInternalAsync(typeof(T)).ContinueWith((task) => (RestResponse<T>)task.Result);
         }
 
+        //Sepcial purpose webrequest only meant to be created by GetResponseInternal() method.
+        //To provide and flexibility to abort Synchronous GetResponse() calls.
+        private HttpWebRequest syncWebRequest;
+
         /// <summary>
-        /// Actual logic for actually making webrequest and retrieving the response for the server.
+        /// Actual logic for actually making synchronous webrequest and retrieving the response for the server.
         /// </summary>
         /// <param name="typeArg"></param>
         /// <param name="httpMethod"></param>
         /// <param name="resource"></param>
-        /// <returns>Task<RestResponse></returns>
+        /// <returns>RestResponse</returns>
+        protected virtual RestResponse GetResponseInternal(Type typeArg)
+        {
+            syncWebRequest = CreateHttpWebRequest();
+            WriteRequestStream(syncWebRequest);
+
+            HttpWebResponse webResponse = null;
+            RestException responseError = null;
+            try
+            {
+                webResponse = (HttpWebResponse)syncWebRequest.GetResponse();
+            }
+            catch (Exception ex)
+            {
+                responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, ex);
+            }
+
+            return CreateResponse(typeArg, webResponse, responseError);
+        }
+
+        /// <summary>
+        /// Actual logic for actually making asynchronous webrequest and retrieving the response for the server.
+        /// </summary>
+        /// <param name="typeArg"></param>
+        /// <param name="httpMethod"></param>
+        /// <param name="resource"></param>
+        /// <returns>A task of RestResponse.</returns>
         protected virtual Task<RestResponse> GetResponseInternalAsync(Type typeArg)
         {
-            HttpWebRequest = CreateHttpWebRequest();
-            WriteRequestStream(HttpWebRequest);
+            _isAsyncTimeout = false;
 
-            CancellationTokenSource = new System.Threading.CancellationTokenSource();
-            CancellationToken = CancellationTokenSource.Token;
+            HttpWebRequest webRequest = CreateHttpWebRequest();
+            WriteRequestStream(webRequest);
 
-            Task<WebResponse> result = Task.Factory.FromAsync(HttpWebRequest.BeginGetResponse, asyncResult => HttpWebRequest.EndGetResponse(asyncResult), (object)HttpWebRequest);
-            ThreadPool.RegisterWaitForSingleObject((result as IAsyncResult).AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), HttpWebRequest, TimeOut, true);
+            _cancellationTokenSource = new System.Threading.CancellationTokenSource();
+            System.Threading.CancellationToken cancellationToken = _cancellationTokenSource.Token;
+
+            Task<WebResponse> result = Task.Factory.FromAsync(webRequest.BeginGetResponse, asyncResult => webRequest.EndGetResponse(asyncResult), (object)webRequest);
+            ThreadPool.RegisterWaitForSingleObject((result as IAsyncResult).AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), webRequest, TimeOut, true);
+
+            cancellationToken.Register((state) =>
+            {
+                webRequest.Abort();
+            }, webRequest);
 
             return result.ContinueWith((task) =>
             {
-                HttpWebResponse webResponse = null;
-                RestException responseError = null;
+                _cancellationTokenSource.Dispose();
 
                 if (task.IsFaulted)
                 {
-                    var flattenedException = task.Exception.Flatten();
-                    var innerException = (Exception)null;
-                    
-                    if (flattenedException.InnerExceptions.Count == 1)
-                    {
-                        innerException = flattenedException.InnerException;
-                    }
+                    const string message = "An exception has occured, get more detail in inner-exception";
 
-                    responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, innerException ?? flattenedException);
-                }
-                else if (task.IsCanceled)
-                {
-                    responseError = new RestException(0, "Request Canceled", null);
+                    if (_isAsyncTimeout)
+                    {
+                        return CreateResponse(typeArg, null, new RestException(0, message, null, new Exception("The operation has timed out")));
+                    }
+                    else
+                    {
+                        var aggregateException = task.Exception.Flatten();
+                        var innerExceptionOrAggregateException = aggregateException.InnerExceptions.Count == 1 ? aggregateException.InnerException : aggregateException;
+
+                        return CreateResponse(typeArg, null, new RestException(0, message, null, innerExceptionOrAggregateException));
+                    }
                 }
                 else
                 {
-                    webResponse = (HttpWebResponse)task.Result;
+                    return CreateResponse(typeArg, (HttpWebResponse)task.Result, null);
                 }
-
-                return CreateResponse(typeArg, webResponse, responseError);
-            }, CancellationToken);
+            });
         }
 
         /// <summary>
@@ -527,15 +547,11 @@ namespace Resty.Net
         {
             if (timedOut)
             {
-                if (CancellationTokenSource != null)
-                {
-                    CancellationTokenSource.Cancel();
-                }
+                _isAsyncTimeout = true;
 
-                HttpWebRequest request = state as HttpWebRequest;
-                if (request != null)
+                if (_cancellationTokenSource != null)
                 {
-                    request.Abort();
+                    _cancellationTokenSource.Cancel();
                 }
             }
         }

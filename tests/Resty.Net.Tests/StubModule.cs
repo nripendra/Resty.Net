@@ -27,8 +27,10 @@ namespace Resty.Net.Tests
             Get["/Person/{id}"] = p =>
             {
                 GetPerson = true;
+
                 Cookie = Request.Cookies;
                 RequestHeaders = Request.Headers;
+
                 if (HaltProcessing != null)
                 {
                     Thread.Sleep(HaltProcessing);
