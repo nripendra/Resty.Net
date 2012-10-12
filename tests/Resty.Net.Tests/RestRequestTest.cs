@@ -90,11 +90,11 @@ namespace Resty.Net.Tests
                 //Assert
                 Assert.True(StubModule.GetPerson);
                 Assert.NotNull(actual);
-                Assert.NotNull(actual.Error);
-                Assert.Equal("request canceled", actual.Error.Message.ToLower());
+                Assert.NotNull(actual.Error.InnerException);
+                Assert.Equal("the operation has timed out", actual.Error.InnerException.Message.ToLower());
             }
         }
-
+        
         [Fact]
         public void GetWithoutServer()
         {
@@ -112,8 +112,7 @@ namespace Resty.Net.Tests
                 Assert.NotNull(actual);
                 Assert.NotNull(actual.Error);
                 Assert.NotNull(actual.Error.InnerException);
-                Assert.NotNull(actual.Error.InnerException.InnerException);
-                Assert.Equal("unable to connect to the remote server", actual.Error.InnerException.InnerException.Message.ToLower());
+                Assert.Equal("unable to connect to the remote server", actual.Error.InnerException.Message.ToLower());
             }
         }
 
@@ -134,8 +133,7 @@ namespace Resty.Net.Tests
                 Assert.NotNull(actual);
                 Assert.NotNull(actual.Error);
                 Assert.NotNull(actual.Error.InnerException);
-                Assert.NotNull(actual.Error.InnerException.InnerException);
-                Assert.Equal("the remote name could not be resolved: 'localhost.nripendraiscool'", actual.Error.InnerException.InnerException.Message.ToLower());
+                Assert.Equal("the remote name could not be resolved: 'localhost.nripendraiscool'", actual.Error.InnerException.Message.ToLower());
             }
         }
 

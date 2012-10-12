@@ -249,7 +249,7 @@ namespace Resty.Net
         /// <returns>RestResponse<T></returns>
         public virtual RestResponse<T> GetResponse<T>()
         {
-            RestResponse<T> restResponse = GetResponseAsync<T>().Result;
+            RestResponse<T> restResponse = (RestResponse<T>)GetResponseInternal(typeof(T));
             return restResponse;
         }
 
@@ -261,7 +261,7 @@ namespace Resty.Net
         /// <returns>RestResponse</returns>
         public virtual RestResponse GetResponse()
         {
-            RestResponse restResponse = GetResponseAsync().Result;
+            RestResponse restResponse = GetResponseInternal(null);
             return restResponse;
         }
 
@@ -303,12 +303,38 @@ namespace Resty.Net
         }
 
         /// <summary>
-        /// Actual logic for actually making webrequest and retrieving the response for the server.
+        /// Actual logic for actually making synchronous webrequest and retrieving the response for the server.
         /// </summary>
         /// <param name="typeArg"></param>
         /// <param name="httpMethod"></param>
         /// <param name="resource"></param>
-        /// <returns>Task<RestResponse></returns>
+        /// <returns>RestResponse</returns>
+        protected virtual RestResponse GetResponseInternal(Type typeArg)
+        {
+            HttpWebRequest = CreateHttpWebRequest();
+            WriteRequestStream(HttpWebRequest);
+
+            HttpWebResponse webResponse = null;
+            RestException responseError = null;
+            try
+            {
+                webResponse = (HttpWebResponse)HttpWebRequest.GetResponse();
+            }
+            catch(Exception ex)
+            {
+                responseError = new RestException(0, "An exception has occured, get more detail in inner-exception", null, ex);
+            }
+
+            return CreateResponse(typeArg, webResponse, responseError);
+        }
+
+        /// <summary>
+        /// Actual logic for actually making asynchronous webrequest and retrieving the response for the server.
+        /// </summary>
+        /// <param name="typeArg"></param>
+        /// <param name="httpMethod"></param>
+        /// <param name="resource"></param>
+        /// <returns>A task of RestResponse.</returns>
         protected virtual Task<RestResponse> GetResponseInternalAsync(Type typeArg)
         {
             HttpWebRequest = CreateHttpWebRequest();
