@@ -29,10 +29,11 @@ namespace Resty.Net.Tests
         [Fact]
         public void Simple()
         {
+            string location = AppDomain.CurrentDomain.BaseDirectory;
             string boundary = Guid.NewGuid().ToString();
             RestRequest request = new RestRequest(HttpMethod.POST, new RestUri(_MyUri, "/File"));
-            request.ContentType = ContentType.Create(string.Format("multipart/form-data; boundary={0}", boundary));
-            var location = AppDomain.CurrentDomain.BaseDirectory;
+            request.ContentType = ContentType.MultiPartFormData.WithBoundary(boundary);
+            
 
             string[] files = new string[] 
             { 

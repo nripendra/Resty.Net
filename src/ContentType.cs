@@ -24,7 +24,10 @@ namespace Resty.Net
 {
     public class ContentType
     {
-        private string _contentType;
+        /// <summary>
+        /// Gets and sets the actual string representation of the content type
+        /// </summary>
+        protected string ContentTypeString { get; set; }
 
         /// <summary>
         /// application/json
@@ -56,7 +59,12 @@ namespace Resty.Net
         /// </summary>
         public static ContentType TextXml { get { return new ContentType("text/xml"); } }
 
-        private ContentType(string contentType)
+        /// <summary>
+        /// multipart/form-data
+        /// </summary>
+        public static MultiPartFormData MultiPartFormData { get { return Resty.Net.MultiPartFormData.Create(); } }
+
+        protected ContentType(string contentType)
         {
             if (contentType == null)
                 throw new ArgumentNullException();
@@ -64,7 +72,7 @@ namespace Resty.Net
             if (string.IsNullOrWhiteSpace(contentType))
                 throw new ArgumentException();
 
-            _contentType = contentType;
+            ContentTypeString = contentType;
         }
 
         /// <summary>
@@ -83,7 +91,7 @@ namespace Resty.Net
         /// <returns>A System.String that represents the current ContentType.</returns>
         public override string ToString()
         {
-            return _contentType;
+            return ContentTypeString;
         }
     }
 }

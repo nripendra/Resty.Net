@@ -53,7 +53,7 @@ namespace Resty.Net
 
         public static HttpMethod SEARCH { get { return new HttpMethod("SEARCH"); } }
 
-        private HttpMethod(string httpMethod)
+        protected HttpMethod(string httpMethod)
         {
             if (httpMethod == null)
                 throw new ArgumentNullException();

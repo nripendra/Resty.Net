@@ -56,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LowLevelFileUploadTest.cs" />
+    <Compile Include="MultiPartFormDataTest.cs" />
     <Compile Include="NancyHostHelper.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
