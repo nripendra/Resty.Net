@@ -35,6 +35,11 @@ namespace Resty.Net
         public static ContentType ApplicationJson { get { return new ContentType("application/json"); } }
 
         /// <summary>
+        /// application/octet-stream
+        /// </summary>
+        public static ContentType ApplicationOctetStream { get { return new ContentType("application/octet-stream"); } }
+
+        /// <summary>
         /// application/x-json
         /// </summary>
         public static ContentType ApplicationXJson { get { return new ContentType("application/x-json"); } }
@@ -50,6 +55,11 @@ namespace Resty.Net
         public static ContentType ApplicationX_WWW_Form_UrlEncoded { get { return new ContentType("application/x-www-form-urlencoded"); } }
 
         /// <summary>
+        /// multipart/form-data
+        /// </summary>
+        public static MultiPartFormData MultiPartFormData { get { return Resty.Net.MultiPartFormData.Create(); } }
+
+        /// <summary>
         /// text/json
         /// </summary>
         public static ContentType TextJson { get { return new ContentType("text/json"); } }
@@ -58,11 +68,6 @@ namespace Resty.Net
         /// text/xml
         /// </summary>
         public static ContentType TextXml { get { return new ContentType("text/xml"); } }
-
-        /// <summary>
-        /// multipart/form-data
-        /// </summary>
-        public static MultiPartFormData MultiPartFormData { get { return Resty.Net.MultiPartFormData.Create(); } }
 
         protected ContentType(string contentType)
         {
