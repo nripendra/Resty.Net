@@ -57,7 +57,7 @@ namespace Resty.Net.Tests
                 sb.AppendFormat("\r\n");
                 sb.AppendFormat("Content-Disposition: form-data; name=\"media\"; filename=\"" + Path.GetFileName(file) + "\"");
                 sb.AppendFormat("\r\n");
-                sb.AppendFormat("Content-Type:  application/octet-stream");
+                sb.AppendFormat("Content-Type:  " + MimeTypes.GetMimeType(Path.GetExtension(file)) ?? ContentType.ApplicationOctetStream.ToString());
                 sb.AppendFormat("\r\n");
                 sb.AppendFormat("\r\n");
                 using (FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
