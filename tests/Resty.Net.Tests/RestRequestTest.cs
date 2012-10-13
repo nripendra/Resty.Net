@@ -417,6 +417,26 @@ namespace Resty.Net.Tests
         }
 
         [Fact]
+        public void PostWithNullBody()
+        {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
+            StubModule.PostPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.POST, new RestUri(_MyUri, "/Person"));
+            target.ContentType = ContentType.ApplicationJson;
+            target.Body = null;
+
+            using (RestResponse actual = target.GetResponse())
+            {
+                Assert.True(StubModule.PostPerson);
+                Assert.NotNull(actual);
+                Assert.True(actual.IsSuccessStatusCode);
+                Assert.Equal(1, StubModule.TestHarness.Count);
+            }
+        }
+
+        [Fact]
         public void PutWithNormalContentType()
         {
             StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
@@ -465,6 +485,26 @@ namespace Resty.Net.Tests
         }
 
         [Fact]
+        public void PutWithNullBody()
+        {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
+            StubModule.PutPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.PUT, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
+            target.ContentType = ContentType.ApplicationJson;
+            target.Body = null;
+
+
+            using (RestResponse actual = target.GetResponse())
+            {
+                Assert.True(StubModule.PutPerson);
+                Assert.NotNull(actual);
+                Assert.True(actual.IsSuccessStatusCode);
+            }
+        }
+
+        [Fact]
         public void PatchWithNormalContentType()
         {
             StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
@@ -478,7 +518,7 @@ namespace Resty.Net.Tests
 
             using (RestResponse actual = target.GetResponse())
             {
-                Assert.True(StubModule.PutPerson);
+                Assert.True(StubModule.PatchPerson);
                 Assert.NotNull(actual);
                 Assert.True(actual.IsSuccessStatusCode);
 
@@ -502,13 +542,32 @@ namespace Resty.Net.Tests
 
             using (RestResponse actual = target.GetResponse())
             {
-                Assert.True(StubModule.PutPerson);
+                Assert.True(StubModule.PatchPerson);
                 Assert.NotNull(actual);
                 Assert.True(actual.IsSuccessStatusCode);
 
                 var person = StubModule.TestHarness.Where(x => x.Id == 1).FirstOrDefault();
                 Assert.NotNull(person);
                 Assert.Equal("bcd@abc.com", person.Email);
+            }
+        }
+
+        [Fact]
+        public void PatchWithNullBody()
+        {
+            StubModule.HaltProcessing = TimeSpan.FromSeconds(0);
+            StubModule.PatchPerson = false;
+            StubModule.TestHarness = new List<Person> { new Person { Id = 1, Email = "abc@abc.com" } };
+
+            RestRequest target = new RestRequest(HttpMethod.PATCH, new RestUri(_MyUri, "/Person/{id}").SetParameter("id", "1"));
+            target.ContentType = ContentType.ApplicationJson;
+            target.Body = null;
+
+            using (RestResponse actual = target.GetResponse())
+            {
+                Assert.True(StubModule.PatchPerson);
+                Assert.NotNull(actual);
+                Assert.True(actual.IsSuccessStatusCode);
             }
         }
 

@@ -395,6 +395,10 @@ namespace Resty.Net
                 dataStream = null;
                 byteArray = null;
             }
+            else
+            {
+                webRequest.ContentLength = 0;
+            }
         }
 
         /// <summary>

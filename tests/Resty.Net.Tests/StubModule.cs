@@ -50,7 +50,10 @@ namespace Resty.Net.Tests
                 Cookie = Request.Cookies;
                 RequestHeaders = Request.Headers;
                 Person person = this.Bind<Person>();
-                TestHarness.Add(person);
+                if (person.Id > 0 && !string.IsNullOrEmpty(person.Email))
+                {
+                    TestHarness.Add(person);
+                }
                 return 200;
             };
 
@@ -84,6 +87,16 @@ namespace Resty.Net.Tests
                 var existingPerson = TestHarness.Where(x => x.Id == p.id).FirstOrDefault();
                 TestHarness.Remove(existingPerson);
                 return 200;
+            };
+
+            Post["/File"] = (p) =>
+            {
+                List<string> fileContents = new List<string>();
+                foreach (HttpFile file in Request.Files)
+                {
+                    fileContents.Add(new StreamReader(file.Value).ReadToEnd());
+                }
+                return fileContents;
             };
         }
 
