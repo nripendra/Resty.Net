@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Xunit;
-using System.IO;
 using System.Collections.Specialized;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text;
+using Xunit;
 
 namespace Resty.Net.Tests
 {
+    //Credit: http://www.dotnetthoughts.net/how-to-upload-file-using-httpwebrequest-class/
+
     public class LowLevelFileUploadTest
     {
         Uri _MyUri;
