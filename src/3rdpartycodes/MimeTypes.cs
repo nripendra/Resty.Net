@@ -210,7 +210,8 @@ public static class MimeTypes
         if (!string.IsNullOrWhiteSpace(rslt.Value))
             return rslt.Value;
         else
-            throw new ApplicationException("Unknown Extension.");
+            //throw new ApplicationException("Unknown Extension.");
+            return null;
     }
 
     /// <summary>

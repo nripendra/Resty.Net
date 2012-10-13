@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="3rdpartycodes\MimeTypes.cs" />
     <Compile Include="3rdpartycodes\SimpleJson.cs" />
     <Compile Include="3rdpartycodes\XmlDeserializer.cs" />
     <Compile Include="3rdpartycodes\XmlDeserializerHelpers.cs" />
