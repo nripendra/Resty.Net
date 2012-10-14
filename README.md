@@ -22,6 +22,6 @@ Install-Package Resty.Net
 
 ## Read more about Resty.Net
 
-* [https://github.com/nripendra/Resty.Net/wiki](https://github.com/nripendra/Resty.Net/wiki)
-* [http://nripendra-newa.blogspot.com/2012/10/introducing-restynet.html](http://nripendra-newa.blogspot.com/2012/10/introducing-restynet.html)
+* [Read about Resty.Net in github wiki](https://github.com/nripendra/Resty.Net/wiki)
+* [Read about Resty.Net in my blog](http://nripendra-newa.blogspot.com/2012/10/introducing-restynet.html)
 
