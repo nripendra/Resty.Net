@@ -12,7 +12,7 @@ namespace Resty.Net.Tests
         [Fact]
         public void WithBoundaryTest()
         {
-            MultiPartFormData target = MultiPartFormData.Create().WithBoundary("----------xxxx");
+            MultiPartFormData target = new MultiPartFormData().WithBoundary("----------xxxx");
 
             string actual = target.ToString();
             string expected = "multipart/form-data; boundary=----------xxxx";

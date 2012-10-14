@@ -69,7 +69,7 @@ namespace Resty.Net
         /// </summary>
         /// <param name="httpMethod"></param>
         /// <returns></returns>
-        public static HttpMethod Create(string httpMethod)
+        public static HttpMethod FromString(string httpMethod)
         {
             return new HttpMethod(httpMethod);
         }

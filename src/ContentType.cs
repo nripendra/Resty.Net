@@ -57,7 +57,7 @@ namespace Resty.Net
         /// <summary>
         /// multipart/form-data
         /// </summary>
-        public static MultiPartFormData MultiPartFormData { get { return Resty.Net.MultiPartFormData.Create(); } }
+        public static MultiPartFormData MultiPartFormData { get { return Resty.Net.MultiPartFormData.FromString(); } }
 
         /// <summary>
         /// text/json
@@ -85,7 +85,7 @@ namespace Resty.Net
         /// </summary>
         /// <param name="contentType"></param>
         /// <returns></returns>
-        public static ContentType Create(string contentType)
+        public static ContentType FromString(string contentType)
         {
             return new ContentType(contentType);
         }

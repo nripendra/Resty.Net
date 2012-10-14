@@ -29,7 +29,7 @@ namespace Resty.Net
         /// </summary>
         public string Boundary { get; private set; }
 
-        protected MultiPartFormData()
+        public MultiPartFormData()
             : base("multipart/form-data")
         {
         }
@@ -51,12 +51,17 @@ namespace Resty.Net
             return this;
         }
 
-        public static MultiPartFormData Create()
+        /// <summary>
+        /// Creates an instance of MultiPartFormData.
+        /// </summary>
+        /// <param name="contentType">Doesn't matter, hard coded to "multipart/form-data"</param>
+        /// <returns></returns>
+        public new static MultiPartFormData FromString(string contentType = "multipart/form-data")
         {
-            return new MultiPartFormData();
+            return new MultiPartFormData("multipart/form-data");
         }
 
-        public new static MultiPartFormData Create(string boundary)
+        public static MultiPartFormData FromBoundaryString(string boundary)
         {
             return new MultiPartFormData(boundary);
         }
