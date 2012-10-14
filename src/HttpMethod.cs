@@ -24,7 +24,7 @@ namespace Resty.Net
 {
     public class HttpMethod
     {
-        private string _httpMethod;
+        protected string HttpMethodString { get; set; }
 
 
         public static HttpMethod ACL { get { return new HttpMethod("ACL"); } }
@@ -61,7 +61,7 @@ namespace Resty.Net
             if (string.IsNullOrWhiteSpace(httpMethod))
                 throw new ArgumentException();
 
-            _httpMethod = httpMethod;
+            HttpMethodString = httpMethod;
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace Resty.Net
         /// <returns>A System.String that represents the current HttpMethod.</returns>
         public override string ToString()
         {
-            return _httpMethod;
+            return HttpMethodString;
         }
     }
 }
